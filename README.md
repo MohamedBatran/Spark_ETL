@@ -1,102 +1,41 @@
-# GitHub Repository Analysis with PySpark & PostgreSQL
+# GitHub Repo ETL Pipeline
 
-## 📌 Project Overview
-This project analyzes GitHub repository data using **PySpark** and stores the results in **PostgreSQL**. It utilizes **Docker** to run PostgreSQL and Jupyter/PySpark in separate containers, allowing easy deployment and scalability.
+## Overview
+This project builds an **ETL (Extract, Transform, Load) data pipeline** using **Apache Spark** and **PostgreSQL**. The pipeline processes JSON files containing data about the most-starred GitHub repositories, extracts key information, transforms it into structured formats, and loads it into a relational database for further analysis.
 
-## 🛠️ Setup Instructions
+## Project Steps
 
-### 1️⃣ Install Docker (if not installed)
-Download and install Docker from [here](https://www.docker.com/get-started).
+### 1. **Set Up Environment**
+- Use Docker to run **Jupyter/PySpark Notebook** and **PostgreSQL** in separate containers.
+- Ensure both containers are in the same Docker network for seamless communication.
 
-### 2️⃣ Run PostgreSQL Container
-```sh
-docker network create spark_postgres_net  # Create a network
+### 2. **Extract Data**
+- Read multiple JSON files containing GitHub repository data using Apache Spark.
+- Load the dataset into a Spark DataFrame.
 
-docker run --name postgres_db --network spark_postgres_net \
-    -e POSTGRES_USER=admin \
-    -e POSTGRES_PASSWORD=admin123 \
-    -e POSTGRES_DB=github_analysis \
-    -p 5432:5432 -d postgres
-```
+### 3. **Transform Data**
+- Extract relevant fields such as programming language, organization, and search terms.
+- Calculate metrics like total stars per organization and a custom relevance score.
+- Handle missing or corrupted records.
 
-### 3️⃣ Run pgAdmin Container (Optional, for GUI)
-```sh
-docker run --name pgadmin --network spark_postgres_net -p 5050:80 \
-    -e PGADMIN_DEFAULT_EMAIL=admin@example.com \
-    -e PGADMIN_DEFAULT_PASSWORD=admin123 \
-    -d dpage/pgadmin4
-```
-- Access **pgAdmin** at `http://localhost:5050`
-- Add **PostgreSQL Server** using:
-  - Hostname: `postgres_db`
-  - Port: `5432`
-  - Username: `admin`
-  - Password: `admin123`
+### 4. **Load Data into PostgreSQL**
+- Create three structured tables:
+  - `programming_lang`: Stores programming languages and the number of repositories using them.
+  - `organizations_stars`: Stores total stars for repositories grouped by organization.
+  - `search_terms_relevance`: Stores the relevance score of repositories based on forks, subscribers, and stars.
+- Use **JDBC connection** to write transformed data into PostgreSQL.
 
-### 4️⃣ Run Jupyter Notebook with PySpark
-```sh
-docker run --name pyspark_notebook --network spark_postgres_net -p 8888:8888 -v $(pwd):/home/jovyan/work \
-    jupyter/pyspark-notebook
-```
-- Access **Jupyter Notebook** at `http://localhost:8888`
-- Open the project notebook from the `work` directory
+### 5. **Perform Exploratory Data Analysis (EDA)**
+- Inspect the data using Spark functions.
+- Identify trends in programming languages, most-starred organizations, and repository relevance.
 
-## 🔄 Data Processing Pipeline
-### 1️⃣ Load GitHub Repository Data
-```python
-from pyspark.sql import SparkSession
+### 6. **Save and Document the Project**
+- Push the project to **GitHub**, including all scripts and setup instructions.
+- Document the process in this **README** file.
 
-spark = SparkSession.builder \
-    .appName("GitHubRepoAnalysis") \
-    .config("spark.jars", "/postgresql-42.7.5.jar") \
-    .getOrCreate()
+## Prerequisites
+- **Docker** installed and configured.
+- Basic knowledge of **Apache Spark**, **PostgreSQL**, and **Jupyter Notebooks**.
 
-df = spark.read.json("github_repos.json")
-df.printSchema()
-```
-
-### 2️⃣ Transform Data (Example: Sum Stars per Organization)
-```python
-from pyspark.sql.functions import sum
-
-org_stars_df = df.filter(df["type"] == "Organization") \
-    .groupBy("username") \
-    .agg(sum("stars").alias("total_stars"))
-```
-
-### 3️⃣ Save Data to PostgreSQL
-```python
-jdbc_url = "jdbc:postgresql://postgres_db:5432/github_analysis"
-org_stars_df.write \
-    .format("jdbc") \
-    .option("url", jdbc_url) \
-    .option("dbtable", "organizations_stars") \
-    .option("user", "admin") \
-    .option("password", "admin123") \
-    .option("driver", "org.postgresql.Driver") \
-    .mode("overwrite") \
-    .save()
-```
-
-## 📊 Exploratory Data Analysis (EDA)
-- Check data summary:
-```python
-df.describe().show()
-```
-- Compute a relevance score:
-```python
-from pyspark.sql.functions import col
-
-df = df.withColumn("relevance_score", 1.5 * col("forks") + 1.32 * col("subscribers") + 1.04 * col("stars"))
-df.select("repo_name", "relevance_score").show()
-```
-
-## ✅ Next Steps
-- **Enhance data cleaning** (handle missing values, remove duplicates)
-- **Add visualization** (use Power BI, Matplotlib, or Seaborn for insights)
-- **Deploy as an ETL pipeline** using Apache Airflow
-
----
-
-### 📝 Author: Mohamed Batran
+This pipeline automates the data ingestion and structuring process, making it easier to analyze trends in GitHub repository data. 🚀
 
