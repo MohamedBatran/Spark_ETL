@@ -1,41 +1,80 @@
-# GitHub Repo ETL Pipeline
+# GitHub Repositories ETL Pipeline
 
 ## Overview
-This project builds an **ETL (Extract, Transform, Load) data pipeline** using **Apache Spark** and **PostgreSQL**. The pipeline processes JSON files containing data about the most-starred GitHub repositories, extracts key information, transforms it into structured formats, and loads it into a relational database for further analysis.
+This project builds an **ETL (Extract, Transform, Load) data pipeline** using **Apache Spark** and **PostgreSQL**. The pipeline processes JSON files containing data on GitHub repositories, extracts relevant information, transforms the data, and loads it into a structured database.
 
-## Project Steps
+## Steps
+### 1. **Setup Environment**
+- Use `jupyter/pyspark-notebook` Docker container to run PySpark.
+- Use `PostgreSQL` as the database.
+- Use `pgAdmin` as the database GUI.
 
-### 1. **Set Up Environment**
-- Use Docker to run **Jupyter/PySpark Notebook** and **PostgreSQL** in separate containers.
-- Ensure both containers are in the same Docker network for seamless communication.
+### 2. **Docker Setup**
+#### Create a network for the containers:
+```sh
+docker network create spark_postgres_net
+```
+#### Run a PostgreSQL container:
+```sh
+docker run --name postgres_db \
+    --network spark_postgres_net \
+    -e POSTGRES_USER=admin \
+    -e POSTGRES_PASSWORD=admin123 \
+    -e POSTGRES_DB=github_data \
+    -p 5432:5432 \
+    -d postgres
+```
+#### Run a Jupyter PySpark container:
+```sh
+docker run --name pyspark_notebook \
+    --network spark_postgres_net \
+    -p 8888:8888 \
+    -v $(pwd):/home/jovyan/work \
+    -d jupyter/pyspark-notebook
+```
+#### Run a pgAdmin container:
+```sh
+docker run --name pgadmin \
+    --network spark_postgres_net \
+    -p 5050:80 \
+    -e PGADMIN_DEFAULT_EMAIL=admin@example.com \
+    -e PGADMIN_DEFAULT_PASSWORD=admin123 \
+    -d dpage/pgadmin4
+```
+#### Accessing the services:
+- **Jupyter Notebook**: Open `http://localhost:8888`
+- **pgAdmin**: Open `http://localhost:5050`
 
-### 2. **Extract Data**
-- Read multiple JSON files containing GitHub repository data using Apache Spark.
-- Load the dataset into a Spark DataFrame.
+### 3. **Extract Data**
+- Load JSON files containing data about GitHub repositories.
+- Extract relevant fields such as `stars`, `forks`, `subscribers`, `language`, `organization`, and `search term`.
 
-### 3. **Transform Data**
-- Extract relevant fields such as programming language, organization, and search terms.
-- Calculate metrics like total stars per organization and a custom relevance score.
-- Handle missing or corrupted records.
+### 4. **Transform Data**
+- Compute aggregated metrics:
+  - Total repositories per programming language.
+  - Total stars per organization.
+  - Relevance score for each search term (`1.5 * forks + 1.32 * subscribers + 1.04 * stars`).
 
-### 4. **Load Data into PostgreSQL**
-- Create three structured tables:
-  - `programming_lang`: Stores programming languages and the number of repositories using them.
-  - `organizations_stars`: Stores total stars for repositories grouped by organization.
-  - `search_terms_relevance`: Stores the relevance score of repositories based on forks, subscribers, and stars.
-- Use **JDBC connection** to write transformed data into PostgreSQL.
+### 5. **Load Data**
+- Store the processed data into a **PostgreSQL database**.
+- Tables created:
+  1. **programming_lang**: Stores programming languages and their repository count.
+  2. **organizations_stars**: Stores organizations and their total stars.
+  3. **search_terms_relevance**: Stores search terms and their computed relevance score.
 
-### 5. **Perform Exploratory Data Analysis (EDA)**
-- Inspect the data using Spark functions.
-- Identify trends in programming languages, most-starred organizations, and repository relevance.
+### 6. **Verify Data in PostgreSQL**
+- Use `pgAdmin` or `psql` to check the tables and verify the inserted data.
+- Run SQL queries to validate the transformations.
 
-### 6. **Save and Document the Project**
-- Push the project to **GitHub**, including all scripts and setup instructions.
-- Document the process in this **README** file.
+### 7. **Shutdown and Cleanup**
+To stop and remove containers:
+```sh
+docker stop postgres_db pyspark_notebook pgadmin
 
-## Prerequisites
-- **Docker** installed and configured.
-- Basic knowledge of **Apache Spark**, **PostgreSQL**, and **Jupyter Notebooks**.
-
-This pipeline automates the data ingestion and structuring process, making it easier to analyze trends in GitHub repository data. 🚀
+docker rm postgres_db pyspark_notebook pgadmin
+```
+To remove the network:
+```sh
+docker network rm spark_postgres_net
+```
 
