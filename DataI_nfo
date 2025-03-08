@@ -1,0 +1,22 @@
+# Top 1000 Github Repositories for Popular Topics
+
+Download Data from here : https://www.kaggle.com/datasets/anshulmehtakaggl/top-1000-github-repositories-for-multiple-domains?select=Spark.json
+About Dataset
+Content
+The data is in JSON Files.
+Each File has the top 1000 starred repositories that appear based on the Search term mentioned in the filename itself.
+These are the Keys present corresponding to each Object in the File
+{'created':
+'description':
+'forks':
+'fullname':
+'id':
+'language':
+'open_issues':
+'repo_name':
+'stars':
+'subscribers':
+'topics': [],
+'type':
+'username':
+}
