@@ -1,4 +1,4 @@
-# Top 1000 GitHub Repositories for Popular Topics
+# GitHub Repositories Data ETL Pipeline
 
 ## Overview
 This project implements an ETL (Extract, Transform, Load) data pipeline using Apache Spark and PostgreSQL. The pipeline processes JSON files containing data about the top-starred repositories on GitHub, extracts meaningful insights, and stores the transformed data in a relational database.
